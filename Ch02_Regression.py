@@ -1,5 +1,5 @@
 # Extreme Gradient Boosting with XGBoost - DataCamp - January 2020
-# Ch1: Regression with XGBoost
+# Ch2: Regression with XGBoost
 
 #-------------------------------------
 #### Setup ####
