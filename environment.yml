@@ -1,0 +1,7 @@
+name: xgboost_training
+dependencies:
+  - python==3.7.5
+  - numpy==1.17.4
+  - pandas==0.25.3
+  - scikit-learn==0.22.0
+  - py-xgboost==0.90
