@@ -1,6 +1,10 @@
 name: xgboost_training
+channels:
+  - defaults
+  - conda-forge
 dependencies:
   - python==3.7.5
+  - pyprojroot==0.2.0
   - numpy==1.17.4
   - pandas==0.25.3
   - scikit-learn==0.22.0
