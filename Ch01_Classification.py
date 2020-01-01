@@ -1,16 +1,21 @@
 # Extreme Gradient Boosting with XGBoost - DataCamp - January 2020
 # Ch1: Classification with XGBoost
 
-#-------------------------------------
-#### Setup ####
-# Import modules
+# -------------------------------------
+# ---- Setup ----
+# Import external modules
 import xgboost as xgb
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split # For sklearn API examples
+from sklearn.model_selection import train_test_split  # For sklearn API examples
 
-#-------------------------------------
-# Notes
+# Check they have imported OK
+print("xgboost version: " + str(xgb.__version__))
+print("numpy version: " + str(np.__version__))
+print("pandas version: " + str(pd.__version__))
+
+# -------------------------------------
+# ---- Notes ----
 ''' Supervised learning: classification
 Response is either: 
     Binary
@@ -22,7 +27,7 @@ Common evaluation metric for BINARY classification problems:
         where 'rank' means the prediction from your model
 For MULTI-CLASS models, common to use:
     Accuracy score (for each class) = (tp + tn) / (tp + tn + fp + fn), where:
-        tp = true +ve (correcly predict the point IS from the class)
+        tp = true +ve (correctly predict the point IS from the class)
         tn = true -ve (correctly predict the point is NOT from the class)
         fp = false +ve (predict it IS from the class when it is NOT)
         fn = false -ve (predict it is NOT from the class when it IS)
