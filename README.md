@@ -32,5 +32,6 @@ Further resources:
 - CambridgeSpark article for "Hyperparameter tuning in XGBoost": <https://blog.cambridgespark.com/hyperparameter-tuning-in-xgboost-4ff9100a3b2f>
 - `xgboost` Python package intro and API reference: <https://xgboost.readthedocs.io/en/latest/python/index.html>
 - Guide to `xgboost` parameters: <https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/>
+    - Also in the `xgboost` documentation: <https://xgboost.readthedocs.io/en/latest/parameter.html>
 
 <div align="right"><a href="#contents">Back to top</a></div>
