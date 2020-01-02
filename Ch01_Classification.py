@@ -116,6 +116,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 dt_clf_4 = DecisionTreeClassifier(  # Instantiate the classifier.
     max_depth=4, # Tree will stop at level 4
     random_state=123  # Random fitting process, so want to ensure reproducibility
+    # The fitting process is random because it is a greedy algorithm, as per: <https://stackoverflow.com/a/39158831>
 )
 dt_clf_4.fit(X_train, y_train)  # Fit
 y_pred_4 = dt_clf_4.predict(X_test)  # Predict on test set
