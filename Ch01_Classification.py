@@ -158,3 +158,48 @@ cv_results_auc = xgb.cv(
 )
 print(cv_results_auc)
 print((cv_results_auc["test-auc-mean"]).iloc[-1])  # AUC closer to 1 is better
+
+# ---- Extras ----
+# The same but with early-stopping
+cv_results_auc_es = xgb.cv(
+    dtrain=churn_dmatrix, params=params,
+    nfold=4, metrics="auc",
+    early_stopping_rounds=10,  # i.e. the metric needs to improve at least once in every X rounds
+    num_boost_round=50,  # Set to a large number and hope it early stops before then
+    as_pandas=True, seed=123,
+    verbose_eval=True,  # Show progress
+)
+print(cv_results_auc_es)
+print((cv_results_auc_es["test-auc-mean"]).iloc[-1])  # AUC closer to 1 is better
+
+
+# Once you've found your desired hyper parameters, you need to fit a model object with them
+# You still need to have a train-test split in order to early stop based on the metric evaluated on the test
+# Note: We'll see that the performance is sensitive to the choice of data, which we can see if we change the seed
+def get_model(random_state, verbose_eval=False):
+    # Split data into train and test
+    X_train, X_test, y_train, y_test = train_test_split(
+        churn_data.iloc[:, :-1], churn_data.iloc[:, -1],
+        test_size=1/4, random_state=random_state
+    )
+    with warnings.catch_warnings():
+        warnings.filterwarnings("ignore", message="Series.base is deprecated")
+        churn_dtrain = xgb.DMatrix(data=X_train, label=y_train)
+        churn_dtest = xgb.DMatrix(data=X_test, label=y_test)
+    # Fit model
+    churn_model = xgb.train(
+        dtrain=churn_dtrain, verbose_eval=verbose_eval,
+        params={**params, **{'eval_metric': 'auc'}},  # Add the metric to the params argument
+        evals=[(churn_dtest, "Test_data")],
+        early_stopping_rounds=10, num_boost_round=50,
+    )
+    return churn_model
+
+
+# Try one seed
+churn_model1 = get_model(123)
+print("Best AUC: {:.2f} in {} rounds".format(churn_model1.best_score, churn_model1.best_iteration+1))
+
+# ...get quite a different result with another seed
+churn_model2 = get_model(42)
+print("Best AUC: {:.2f} in {} rounds".format(churn_model2.best_score, churn_model2.best_iteration+1))
