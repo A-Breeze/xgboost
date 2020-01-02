@@ -7,8 +7,10 @@
 import xgboost as xgb
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split  # For sklearn API examples
 from pyprojroot import here
+from sklearn.model_selection import train_test_split  # For sklearn API examples
+from sklearn.datasets import load_breast_cancer  # Data built-in with sklearn
+from sklearn.tree import DecisionTreeClassifier  # For Decision Tree example
 
 # Check they have imported OK
 print("xgboost version: " + str(xgb.__version__))
@@ -59,8 +61,10 @@ Base learner = an individual learning algorithm in an ensemble algorithm
 e.g. a decision tree = series of binary questions
     Constructed iteratively (i.e. one binary decision at a time), until a stopping criterion is met (e.g. depth of tree)
     Want to choose a split point to separate the target values better => each leaf should be largely one category
+    Individual decision trees tend to overfit = low bias + high variance [i.e. worse fit test than training data]
 XGBoost uses a Classification and Regression Tree (CART):
     Each leaf ALWAYS contains a real-valued score (whether this is a classification or regression problem)
+    For classification, the real-valued score can be threshold-ed to convert to a categorical prediction
 
 Boosting = an ensemble meta-algorithm to convert many weak learners to a strong learner
     Weak learner = predictions are slightly better than chance
@@ -90,9 +94,9 @@ X, y = churn_data.iloc[:, :-1], churn_data.iloc[:, -1]  # Response is last colum
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
 
 # Compile and run model
-xg_cl = xgb.XGBClassifier(objective='binary:logistic', n_estimators=10, seed=123)
+xg_cl = xgb.XGBClassifier(objective='binary:logistic', n_estimators=10, random_state=123)
 xg_cl.fit(X_train, y_train)
-
+help(xgb.XGBClassifier)
 # Get predictions on test set and evaluate accuracy
 preds = xg_cl.predict(X_test)
 accuracy = float(np.sum(preds == y_test)) / y_test.shape[0]
@@ -100,23 +104,26 @@ print("accuracy: %f" % accuracy)
 
 # -------------------------------------
 # ---- Ex02: Decision tree from sklearn ----
-from sklearn.datasets import load_breast_cancer # Data built-in with sklearn
-from sklearn.tree import DecisionTreeClassifier
 # Get data and split into training and test
 bc_data_bunch = load_breast_cancer()
 X = pd.DataFrame(bc_data_bunch.data, columns=bc_data_bunch.feature_names)
 y = bc_data_bunch.target
-X.head() # Check it looks OK
-y[:10] # Response is 0 or 1
+print(X.head())  # Check it looks OK
+print(y[:10])  # Response is 0 or 1
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
-# Modelling
-dt_clf_4 = DecisionTreeClassifier(max_depth=4) # Instantiate the classifier. Tree will stop at level 4
-dt_clf_4.fit(X_train, y_train) # Fit
-y_pred_4 = dt_clf_4.predict(X_test) # Predict on test set
-accuracy = float(np.sum(y_pred_4==y_test))/y_test.shape[0]
-print("accuracy:", accuracy) # 0.974
 
-# Quick example - amended to use xgboost data structure
+# Modelling
+dt_clf_4 = DecisionTreeClassifier(  # Instantiate the classifier.
+    max_depth=4, # Tree will stop at level 4
+    random_state=123  # Random fitting process, so want to ensure reproducibility
+)
+dt_clf_4.fit(X_train, y_train)  # Fit
+y_pred_4 = dt_clf_4.predict(X_test)  # Predict on test set
+accuracy = float(np.sum(y_pred_4 == y_test))/y_test.shape[0]
+print("accuracy:", accuracy)  # 0.965
+
+# -------------------------------------
+# ---- Ex03: Ex01 amended to use xgboost data structure ----
 # Explanatory and response variables
 class_dmatrix = xgb.DMatrix(data = class_data.iloc[:,1:], label = class_data.iloc[:,0])
 params = {"objective":"binary:logistic", "max_depth":4} # Create parameters dictionary
