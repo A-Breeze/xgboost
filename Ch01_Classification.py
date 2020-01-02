@@ -8,11 +8,15 @@ import xgboost as xgb
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split  # For sklearn API examples
+from pyprojroot import here
 
 # Check they have imported OK
 print("xgboost version: " + str(xgb.__version__))
 print("numpy version: " + str(np.__version__))
 print("pandas version: " + str(pd.__version__))
+
+# Project locations
+data_folder_path = here('.') / 'data'
 
 # -------------------------------------
 # ---- Notes ----
@@ -50,13 +54,13 @@ What is XGBoost:
     Core algorithm is parallelisable
 
 Base learner = an individual learning algorithm in an ensemble algorithm
-    Want a base learner to be good at predicting on a subset of the dataset...
-    ...and uniformly bad at predicting the rest of the dataset
+    Want a base learner to be good at predicting on a subset of the data set...
+    ...and uniformly bad at predicting the rest of the data set
 e.g. a decision tree = series of binary questions
     Constructed iteratively (i.e. one binary decision at a time), until a stopping criterion is met (e.g. depth of tree)
     Want to choose a split point to separate the target values better => each leaf should be largely one category
 XGBoost uses a Classification and Regression Tree (CART):
-    Each leaf ALWAYS contains a real-valued score (whether this is a classification or regresssion problem)
+    Each leaf ALWAYS contains a real-valued score (whether this is a classification or regression problem)
 
 Boosting = an ensemble meta-algorithm to convert many weak learners to a strong learner
     Weak learner = predictions are slightly better than chance
@@ -72,25 +76,30 @@ When to use XGBoost:
     - Mixture of categorical and numeric features, or just numeric
 '''
 
-#-------------------------------------
-# Example 01
-# Quick example - using xgboost, but with the sklearn data structure
-# Get data
-class_data = pd.read_csv('.\\01_Data\\02_titanic_all_numeric.csv') # Info: https://archive.ics.uci.edu/ml/datasets/chronic_kidney_disease
-class_data.head() # Check it has loaded OK
-class_data.shape
+# -------------------------------------
+# ---- Ex01: Basic xgboost, with the sklearn workflow ----
+# Load data
+churn_data = pd.read_csv(data_folder_path / 'churn_data.csv')
+print(churn_data.head())  # Check it has loaded OK
+# Can also look at in PyCharm: Python Console - On the right of the variable name "View as DataFrame"
+# Example: <https://www.jetbrains.com/help/pycharm/viewing-as-array.html>
+print(churn_data.shape)
+
 # Explanatory and response variables
-X, y = class_data.iloc[:,1:], class_data.iloc[:,0] # Response is first column: 0 or 1
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = 0.2, random_state = 123)
+X, y = churn_data.iloc[:, :-1], churn_data.iloc[:, -1]  # Response is last column: 0 or 1
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=123)
+
 # Compile and run model
-xg_cl = xgb.XGBClassifier(objective = 'binary:logistic', n_estimators = 10, seed = 123)
+xg_cl = xgb.XGBClassifier(objective='binary:logistic', n_estimators=10, seed=123)
 xg_cl.fit(X_train, y_train)
+
 # Get predictions on test set and evaluate accuracy
 preds = xg_cl.predict(X_test)
 accuracy = float(np.sum(preds == y_test)) / y_test.shape[0]
-print("accuracy: %f" % (accuracy))
+print("accuracy: %f" % accuracy)
 
-# Decision tree example from sklearn
+# -------------------------------------
+# ---- Ex02: Decision tree from sklearn ----
 from sklearn.datasets import load_breast_cancer # Data built-in with sklearn
 from sklearn.tree import DecisionTreeClassifier
 # Get data and split into training and test
