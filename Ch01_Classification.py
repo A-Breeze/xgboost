@@ -3,6 +3,9 @@
 
 # -------------------------------------
 # ---- Setup ----
+# Import built-in modules
+import warnings
+
 # Import external modules
 import xgboost as xgb
 import pandas as pd
@@ -114,7 +117,7 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_
 
 # Modelling
 dt_clf_4 = DecisionTreeClassifier(  # Instantiate the classifier.
-    max_depth=4, # Tree will stop at level 4
+    max_depth=4,  # Tree will stop at level 4
     random_state=123  # Random fitting process, so want to ensure reproducibility
     # The fitting process is random because it is a greedy algorithm, as per: <https://stackoverflow.com/a/39158831>
 )
@@ -124,23 +127,34 @@ accuracy = float(np.sum(y_pred_4 == y_test))/y_test.shape[0]
 print("accuracy:", accuracy)  # 0.965
 
 # -------------------------------------
-# ---- Ex03: Ex01 amended to use xgboost data structure ----
-# Explanatory and response variables
-class_dmatrix = xgb.DMatrix(data = class_data.iloc[:,1:], label = class_data.iloc[:,0])
-params = {"objective":"binary:logistic", "max_depth":4} # Create parameters dictionary
+# ---- Ex03: Ex01 amended to use xgboost API ----
+# Data loaded as in Ex01
+# Put explanatory and response variables into an xgboost data format
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    churn_dmatrix = xgb.DMatrix(data=churn_data.iloc[:, :-1], label=churn_data.iloc[:, -1])
+    # Gives warning about "Series.base will be deprecated". It can be ignored.
+    # Should be fixed in xgboost 1.0.0, as per: https://github.com/dmlc/xgboost/issues/4300#issuecomment-508589063
+
 # Run it using cross validation
-cv_results = xgb.cv(dtrain=class_dmatrix, params=params
-                    , nfold=4 # Num of cross validation folds
-                    , num_boost_round=10 # How many trees to build (i.e. number of boosting iterations)
-                    , metrics="error" # Other options: "auc"
-                    , as_pandas=True # Output to be a pandas df
-                    , seed=123) # For reproducibility
-cv_results # Note that the test error decreases
-print("Accuracy: %f" %((1-cv_results["test-error-mean"]).iloc[-1])) # Print resulting error on test
-# The same but with AUC as metric
-cv_results_auc = xgb.cv(dtrain=class_dmatrix, params=params
-                    , nfold=4, num_boost_round=10, metrics="auc"
-                    , as_pandas=True, seed=123)
-cv_results_auc
-print((cv_results_auc["test-auc-mean"]).iloc[-1]) # Closer to 1 is better
+params = {"objective": "binary:logistic", "max_depth": 4}  # Create parameters dictionary
+cv_results = xgb.cv(
+    dtrain=churn_dmatrix, params=params,
+    nfold=4,  # Num of cross validation folds
+    num_boost_round=10,  # How many trees to build (i.e. number of boosting iterations)
+    metrics="error",  # Other options: "auc"
+    as_pandas=True,  # Output to be a pandas df
+    seed=123,  # For reproducibility
+)
+print(cv_results)  # Note that the train error decreases, but the test error is fluctuating
 # Note this is "-mean" because it is the mean over cross-validation folds
+print("Accuracy: %f" % ((1 - cv_results["test-error-mean"]).iloc[-1]))  # Print resulting error on test. 0.741
+
+# The same but with AUC as metric
+cv_results_auc = xgb.cv(
+    dtrain=churn_dmatrix, params=params,
+    nfold=4, num_boost_round=10, metrics="auc",
+    as_pandas=True, seed=123
+)
+print(cv_results_auc)
+print((cv_results_auc["test-auc-mean"]).iloc[-1])  # AUC closer to 1 is better
