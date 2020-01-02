@@ -66,7 +66,7 @@ Base learner = an individual learning algorithm in an ensemble algorithm
 e.g. a decision tree = series of binary questions
     Constructed iteratively (i.e. one binary decision at a time), until a stopping criterion is met (e.g. depth of tree)
     Want to choose a split point to separate the target values better => each leaf should be largely one category
-    Individual decision trees tend to overfit = low bias + high variance [i.e. worse fit test than training data]
+    Individual decision trees tend to over fit = low bias + high variance [i.e. worse fit test than training data]
 XGBoost uses a Classification and Regression Tree (CART):
     Each leaf ALWAYS contains a real-valued score (whether this is a classification or regression problem)
     For classification, the real-valued score can be threshold-ed to convert to a categorical prediction
@@ -178,16 +178,17 @@ print((cv_results_auc_es["test-auc-mean"]).iloc[-1])  # AUC closer to 1 is bette
 # Once you've found your desired hyper parameters, you need to fit a model object with them
 # You still need to have a train-test split in order to early stop based on the metric evaluated on the test
 # Note: We'll see that the performance is sensitive to the choice of data, which we can see if we change the seed
+# noinspection PyShadowingNames
 def get_model(random_state, verbose_eval=False):
     # Split data into train and test
-    X_train, X_test, y_train, y_test = train_test_split(
+    x_train, x_test, y_train, y_test = train_test_split(
         churn_data.iloc[:, :-1], churn_data.iloc[:, -1],
         test_size=1/4, random_state=random_state
     )
     with warnings.catch_warnings():
         warnings.filterwarnings("ignore", message="Series.base is deprecated")
-        churn_dtrain = xgb.DMatrix(data=X_train, label=y_train)
-        churn_dtest = xgb.DMatrix(data=X_test, label=y_test)
+        churn_dtrain = xgb.DMatrix(data=x_train, label=y_train)
+        churn_dtest = xgb.DMatrix(data=x_test, label=y_test)
     # Fit model
     churn_model = xgb.train(
         dtrain=churn_dtrain, verbose_eval=verbose_eval,
