@@ -1,11 +1,10 @@
 <!-- To view this file rendered, try opening VSCode and clicking to open the "Preview" pane -->
-# xgboost - DataCamp course notes
-Link to course here: <https://www.datacamp.com/courses/extreme-gradient-boosting-with-xgboost>
+# xgboost - notes
 
 ## Contents
 <!-- This contents is kept up to date *manually* -->
 1. [How to start this project environment](#How-to-start-this-project-environment)
-1. [Further resources](#Further-resources)
+1. [Links to resources](#Further-resources)
 
 <div align="right"><a href="#contents">Back to top</a></div>
 
@@ -27,6 +26,11 @@ Link to course here: <https://www.datacamp.com/courses/extreme-gradient-boosting
 <div align="right"><a href="#contents">Back to top</a></div>
 
 ## Further resources
-TODO: Add further resources
+DataCamp course: <https://www.datacamp.com/courses/extreme-gradient-boosting-with-xgboost>
+
+Further resources:
+- CambridgeSpark article for "Hyperparameter tuning in XGBoost": <https://blog.cambridgespark.com/hyperparameter-tuning-in-xgboost-4ff9100a3b2f>
+- `xgboost` Python package intro and API reference: <https://xgboost.readthedocs.io/en/latest/python/index.html>
+- Guide to `xgboost` parameters: <https://www.analyticsvidhya.com/blog/2016/03/complete-guide-parameter-tuning-xgboost-with-codes-python/>
 
 <div align="right"><a href="#contents">Back to top</a></div>
