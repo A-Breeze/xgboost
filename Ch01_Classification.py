@@ -10,10 +10,12 @@ import warnings
 import xgboost as xgb
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
 from pyprojroot import here
 from sklearn.model_selection import train_test_split  # For sklearn API examples
 from sklearn.datasets import load_breast_cancer  # Data built-in with sklearn
 from sklearn.tree import DecisionTreeClassifier  # For Decision Tree example
+from sklearn.metrics import roc_curve, roc_auc_score
 
 # Check they have imported OK
 print("xgboost version: " + str(xgb.__version__))
@@ -193,13 +195,35 @@ def get_model(random_state, verbose_eval=False):
         evals=[(churn_dtest, "Test_data")],
         early_stopping_rounds=10, num_boost_round=50,
     )
-    return churn_model
+    return churn_model, {'churn_dtrain': churn_dtrain, 'churn_dtest': churn_dtest}
 
 
 # Try one seed
-churn_model1 = get_model(123)
+churn_model1, _ = get_model(123)
 print("Best AUC: {:.2f} in {} rounds".format(churn_model1.best_score, churn_model1.best_iteration+1))
 
 # ...get quite a different result with another seed
-churn_model2 = get_model(42)
+churn_model2, data2 = get_model(42)
 print("Best AUC: {:.2f} in {} rounds".format(churn_model2.best_score, churn_model2.best_iteration+1))
+
+# Plot the ROC
+predicted_scores = churn_model2.predict(data2['churn_dtest'], ntree_limit=churn_model2.best_ntree_limit)
+roc_auc = roc_auc_score(
+    data2['churn_dtest'].get_label(),  # True binary labels
+    predicted_scores
+)
+fpr, tpr, _ = roc_curve(
+    data2['churn_dtest'].get_label(),  # True binary labels
+    churn_model2.predict(data2['churn_dtest'])  # Target scores
+)
+plt.figure()
+lw = 2
+plt.plot(fpr, tpr, color='darkorange', label='ROC curve (area = %0.2f)' % roc_auc)
+plt.plot([0, 1], [0, 1], color='navy', linestyle='--')
+plt.xlim([-0.02, 1.0])
+plt.ylim([0.0, 1.05])
+plt.xlabel('False Positive Rate')
+plt.ylabel('True Positive Rate')
+plt.title('ROC curve')
+plt.legend(loc="lower right")
+plt.show()
