@@ -11,6 +11,8 @@ import io  # For parsing data scraped from a website (if using an internet proxy
 import xgboost as xgb
 import pandas as pd
 import numpy as np
+import matplotlib.pyplot as plt
+from matplotlib import __version__ as mpl_version
 from pyprojroot import here
 from sklearn import __version__ as skl_version
 from sklearn.model_selection import train_test_split  # For sklearn API examples
@@ -22,6 +24,7 @@ from requests import get as requests_get  # For getting data from a website (if 
 print("xgboost version: " + str(xgb.__version__))
 print("numpy version: " + str(np.__version__))
 print("pandas version: " + str(pd.__version__))
+print("matplotlib version: " + str(mpl_version))
 print("sklearn version: " + str(skl_version))
 
 # Project locations
@@ -134,11 +137,19 @@ with warnings.catch_warnings():
 params = {"objective":"reg:linear", "max_depth":4}
 cv_results = xgb.cv(
     dtrain=housing_dmatrix,
-    params=params, nfold=4, num_boost_round=5, metrics="rmse",  # Alternatively: "mae"
+    params=params, nfold=4, num_boost_round=20, metrics="rmse",  # Alternatively: "mae"
     as_pandas=True, seed=123, verbose_eval=True
 )
 print(cv_results)
 print(cv_results["test-rmse-mean"].tail(1))  # Final boosting round metric
+
+# Extra: Plot the learning curve
+x_axis = range(0, len(cv_results))
+plt.figure()
+plt.plot(x_axis, cv_results['train-rmse-mean'], label='Train')
+plt.plot(x_axis, cv_results['test-rmse-mean'], label='Test')
+plt.legend(); plt.ylabel('RMSE'); plt.title('XGBoost RMSE')
+plt.show()
 
 #-------------------------------------
 # ---- Ex03: Example with regularisation ----
