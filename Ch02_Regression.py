@@ -132,14 +132,17 @@ with warnings.catch_warnings():
 
 # Fit model
 params = {"objective":"reg:linear", "max_depth":4}
-cv_results = xgb.cv(dtrain=housing_dmatrix, params=params
-                    , nfold=4, num_boost_round=5, metrics="rmse"  # Alternatively: "mae"
-                    , as_pandas=True, seed=123)
+cv_results = xgb.cv(
+    dtrain=housing_dmatrix,
+    params=params, nfold=4, num_boost_round=5, metrics="rmse",  # Alternatively: "mae"
+    as_pandas=True, seed=123, verbose_eval=True
+)
 print(cv_results)
-(cv_results["test-rmse-mean"]).tail(1)  # Final boosting round metric
-type(cv_results)
+print(cv_results["test-rmse-mean"].tail(1))  # Final boosting round metric
 
-# Example with regularisation
+#-------------------------------------
+# ---- Ex03: Example with regularisation ----
+# TODO: Tidy this example so it runs
 boston_dmatrix = xgb.DMatrix(data=X_boston, label=y_boston) # Data defined above
 params = {"objective":"reg:linear", "max_depth":4} # booster = "gbtree" is implied by default
 l1_params = [1,10,100] # L1 values to try
