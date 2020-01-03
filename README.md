@@ -23,6 +23,12 @@
     ```
     (xgboost_training) > where python | clip
     ```
+
+### Private project environment variables
+`.\config_public.py` contains a list of all the private variables that I needed to run the code, except with the private values set to `None`. To use those variables:
+1. Create a copy of `.\config_public.py`, and save it as  `.\config_private.py`. It will be ignored from the Git repo.
+1. In `config_private.py`, replace the `None` values with your required private values. 
+
 <div align="right"><a href="#contents">Back to top</a></div>
 
 ## Further resources
