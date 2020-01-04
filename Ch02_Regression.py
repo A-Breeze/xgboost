@@ -191,8 +191,14 @@ print(pd.DataFrame(list(zip(l1_params, rmses_l1)), columns=["l1", "rmse"]))
 # pd.DataFrame(list(zip(list_1, list_2)), columns=["list_1","list_2"])
 # Uses zip() to get from [1,2,3], [a,b,c] to [1,a],[2,b],[3.c]
 # In Python 3, zip() returns a GENERATOR which needs to be cast using list()
-    
+
 # Visualising individual trees
-# import graphviz as gv
 xgb.plot_tree(xg_reg, num_trees=0); plt.show() # First tree
 xgb.plot_tree(xg_reg, num_trees=9, rankdir="LR"); plt.show() # Tenth tree, sideways
+
+# Note: To use xgb.plot_tree() you need to have graphviz installed.
+# This must be done in two conda installs:
+# - graphviz <- for the external (non-Python) software.
+# - python-graphviz <- for the Python interface that plot_tree uses.
+# See: <https://stackoverflow.com/a/47043173>
+# It is *not* necessary to import the Python module into the code.
