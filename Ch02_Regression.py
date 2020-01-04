@@ -57,9 +57,10 @@ Base learners, examples:
         And we already know how to solve multivariate linear models (by matrix methods)
         However, if you stop the fitting early, it might provide some sort of regularisation
 Regularisation = limit model complexity by adding a term to the objective function. Parameters in XGBoost:
-    - gamma = minimum loss reduction allowed for a split to occur
-    - alpha = L1 regularisation on LEAF weights (NOT on feature weights), larger alpha => more regularisation
-    - lambda = L2 regularisation
+    - gamma = minimum loss reduction allowed for a split to occur. So: larger gamma => fewer splits
+    - alpha = L1 regularisation on LEAF weights (NOT on feature weights). So: larger alpha => more regularisation
+        Higher alpha causes many leaf weights to go to zero
+    - lambda = L2 regularisation on leaf weights
 '''
 
 # -------------------------------------
@@ -134,7 +135,7 @@ with warnings.catch_warnings():
     housing_dmatrix = xgb.DMatrix(data=X_ames, label=y_ames)
 
 # Fit model
-params = {"objective": "reg:linear", "max_depth": 4}
+params = {"objective": "reg:squarederror", "max_depth": 4}
 cv_results = xgb.cv(
     dtrain=housing_dmatrix,
     params=params, nfold=4, num_boost_round=20, metrics="rmse",  # Alternatively: "mae"
@@ -165,26 +166,33 @@ plt.show()
 
 #-------------------------------------
 # ---- Ex03: Example with regularisation ----
-# TODO: Tidy this example so it runs
-boston_dmatrix = xgb.DMatrix(data=X_boston, label=y_boston) # Data defined above
-params = {"objective":"reg:linear", "max_depth":4} # booster = "gbtree" is implied by default
-l1_params = [1,10,100] # L1 values to try
-rmses_l1 = [] # Initialise list to store results
+# Load and transform the data
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    boston_dmatrix = xgb.DMatrix(data=X_boston, label=y_boston)  # Data defined above
+
+# Fit various hyper-parameter values to find a suitable model
+params = {"objective": "reg:squarederror", "max_depth": 4}  # booster = "gbtree" is implied by default
+l1_params = [1,10,100]  # L1 values to try
+rmses_l1 = []  # Initialise list to store results
 for reg in l1_params:
-    params["alpha"] = reg # L1 values need to go into the 'alpha' parameter
-    cv_results = xgb.cv(dtrain=boston_dmatrix, params=params
-                    , nfold=4, num_boost_round=5, metrics="rmse"
-                    , as_pandas=True, seed=123)
-    rmses_l1.append(cv_results["test-rmse-mean"].tail(1).values[0]) # Store final result
-print("Best rmse as a function of l1:"); 
-print(pd.DataFrame(list(zip(l1_params, rmses_l1)), columns=["l1","rmse"]))
+    params["alpha"] = reg  # L1 values need to go into the 'alpha' parameter
+    cv_results = xgb.cv(
+        dtrain=boston_dmatrix, params=params,
+        nfold=4, num_boost_round=5, metrics="rmse",
+        as_pandas=True, seed=123
+    )
+    rmses_l1.append(cv_results["test-rmse-mean"].tail(1).values[0])  # Store final result
+
+print("We want the best (i.e. lowest) rmse from the available alpha values")
+print(pd.DataFrame(list(zip(l1_params, rmses_l1)), columns=["l1", "rmse"]))
     
 # Side note: Common syntax for converting many equal-length lists to a DataFrame:
 # pd.DataFrame(list(zip(list_1, list_2)), columns=["list_1","list_2"])
 # Uses zip() to get from [1,2,3], [a,b,c] to [1,a],[2,b],[3.c]
 # In Python 3, zip() returns a GENERATOR which needs to be cast using list()
     
-# Plotting trees
-import graphviz as gv
+# Visualising individual trees
+# import graphviz as gv
 xgb.plot_tree(xg_reg, num_trees=0); plt.show() # First tree
 xgb.plot_tree(xg_reg, num_trees=9, rankdir="LR"); plt.show() # Tenth tree, sideways
