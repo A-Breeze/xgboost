@@ -14,6 +14,7 @@ import numpy as np
 from matplotlib import __version__ as mpl_version
 from pyprojroot import here
 from sklearn import __version__ as skl_version
+from sklearn.model_selection import GridSearchCV
 from requests import get as requests_get  # For getting data from a website (if using an internet proxy)
 
 # Check they have imported OK
@@ -50,6 +51,11 @@ For linear learner:
 - lambda_bias = L2 regularisation term on the bias 
 
 Both: Number of boosting round [and early stopping]
+
+Options for finding the best hyperparameters
+- Grid search => search exhaustively over a given set of hyper-parameter values
+    Pick the hyper-parameter values that give you the best cross-validated evaluation metric
+- Random search => 
 '''
 
 # -------------------------------------
@@ -101,7 +107,7 @@ print("Tuned rmse: %f" % tuned_cv_results['test-rmse-mean'].tail(1))
 
 # -------------------------------------
 # ---- Ex02: Tuning a single hyper-parameter ----
-# Load data and format (should work even if you are not logged in to DataCamp)
+#  Fixed parameters
 params = {"objective": "reg:squarederror", "max_depth": 3}
 
 # Create list of eta values and empty list to store final round rmse per xgboost model
@@ -125,3 +131,26 @@ for curr_val in eta_vals:
 
 # Print the resultant DataFrame
 print(pd.DataFrame(list(zip(eta_vals, best_rmse)), columns=["eta", "best_rmse"]))
+
+# -------------------------------------
+# ---- Ex03: Grid search for hyper-parameters ----
+# Grid of hyper-parameters from which we want to find the optimal combination
+gbm_param_grid = {
+    'learning_rate': [0.01, 0.1, 0.5, 0.9],
+    'n_estimators': [200],
+    'subsample': [0.3, 0.5, 0.9]
+}
+gbm = xgb.XGBRegressor(random_state=123)  # Use the sklearn API
+grid_rmse = GridSearchCV(
+    estimator=gbm,
+    param_grid=gbm_param_grid,
+    scoring='neg_mean_squared_error',
+    cv=4, verbose=2,
+)
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    grid_rmse.fit(X, y)
+
+# Look at results
+print("Best parameters found: ", grid_rmse.best_params_)
+print("Lowest RMSE found: ", np.sqrt(np.abs(grid_rmse.best_score_)))
