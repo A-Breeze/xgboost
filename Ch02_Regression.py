@@ -144,14 +144,14 @@ cv_results = xgb.cv(
 print(cv_results)
 print(cv_results["test-rmse-mean"].tail(1))  # Final boosting round metric
 
-# Extra: Plot the learning curve
-x_axis = range(1, len(cv_results)+1)
+# Extra: Plot the performance trajectory
+x_axis = range(1, len(cv_results) + 1)
 plt.figure()
 plt.plot(x_axis, cv_results['train-rmse-mean'], label='Train')
 plt.fill_between(
     x_axis,
-    cv_results['train-rmse-mean'] - 10*cv_results['train-rmse-std'],  # Wider margin for train so we can actually see
-    cv_results['train-rmse-mean'] + 10*cv_results['train-rmse-std'],  # the region (otherwise it is too small)
+    cv_results['train-rmse-mean'] - 10 * cv_results['train-rmse-std'],  # Wider margin for train so we can actually see
+    cv_results['train-rmse-mean'] + 10 * cv_results['train-rmse-std'],  # the region (otherwise it is too small)
     alpha=0.1,
 )
 plt.plot(x_axis, cv_results['test-rmse-mean'], label='Test')
@@ -161,10 +161,26 @@ plt.fill_between(
     cv_results['test-rmse-mean'] + cv_results['test-rmse-std'],
     alpha=0.1,
 )
-plt.legend(); plt.ylabel('RMSE'); plt.title('XGBoost RMSE')
+plt.legend()
+plt.ylabel('RMSE')
+plt.title('XGBoost RMSE')
 plt.show()
 
-#-------------------------------------
+# Visualising individual trees
+xg_reg3 = xgb.train(dtrain=housing_dmatrix, params=params, num_boost_round=10)  # Fit a model
+xgb.plot_tree(xg_reg3, num_trees=0); plt.show()  # First tree
+xgb.plot_tree(xg_reg3, num_trees=9, rankdir="LR"); plt.show()  # Tenth tree, sideways
+# Note: To use xgb.plot_tree() you need to have graphviz installed.
+# This must be done in two conda installs:
+# - graphviz <- for the external (non-Python) software.
+# - python-graphviz <- for the Python interface that plot_tree uses.
+# See: <https://stackoverflow.com/a/47043173>
+# It is *not* necessary to import the Python module into the code.
+
+# Visualising feature importances
+xgb.plot_importance(xg_reg3); plt.show()
+
+# -------------------------------------
 # ---- Ex03: Example with regularisation ----
 # Load and transform the data
 with warnings.catch_warnings():
@@ -173,7 +189,7 @@ with warnings.catch_warnings():
 
 # Fit various hyper-parameter values to find a suitable model
 params = {"objective": "reg:squarederror", "max_depth": 4}  # booster = "gbtree" is implied by default
-l1_params = [1,10,100]  # L1 values to try
+l1_params = [1, 10, 100]  # L1 values to try
 rmses_l1 = []  # Initialise list to store results
 for reg in l1_params:
     params["alpha"] = reg  # L1 values need to go into the 'alpha' parameter
@@ -186,19 +202,8 @@ for reg in l1_params:
 
 print("We want the best (i.e. lowest) rmse from the available alpha values")
 print(pd.DataFrame(list(zip(l1_params, rmses_l1)), columns=["l1", "rmse"]))
-    
+
 # Side note: Common syntax for converting many equal-length lists to a DataFrame:
 # pd.DataFrame(list(zip(list_1, list_2)), columns=["list_1","list_2"])
 # Uses zip() to get from [1,2,3], [a,b,c] to [1,a],[2,b],[3.c]
 # In Python 3, zip() returns a GENERATOR which needs to be cast using list()
-
-# Visualising individual trees
-xgb.plot_tree(xg_reg, num_trees=0); plt.show() # First tree
-xgb.plot_tree(xg_reg, num_trees=9, rankdir="LR"); plt.show() # Tenth tree, sideways
-
-# Note: To use xgb.plot_tree() you need to have graphviz installed.
-# This must be done in two conda installs:
-# - graphviz <- for the external (non-Python) software.
-# - python-graphviz <- for the Python interface that plot_tree uses.
-# See: <https://stackoverflow.com/a/47043173>
-# It is *not* necessary to import the Python module into the code.
