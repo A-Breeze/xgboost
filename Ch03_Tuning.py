@@ -14,7 +14,7 @@ import numpy as np
 from matplotlib import __version__ as mpl_version
 from pyprojroot import here
 from sklearn import __version__ as skl_version
-from sklearn.model_selection import GridSearchCV
+from sklearn.model_selection import GridSearchCV, RandomizedSearchCV
 from requests import get as requests_get  # For getting data from a website (if using an internet proxy)
 
 # Check they have imported OK
@@ -55,7 +55,8 @@ Both: Number of boosting round [and early stopping]
 Options for finding the best hyperparameters
 - Grid search => search exhaustively over a given set of hyper-parameter values
     Pick the hyper-parameter values that give you the best cross-validated evaluation metric
-- Random search => 
+- Random search => create a (possibly infinite) range of hyper-parameter values per hyper-parameter to search over
+    Set the number of search iterations. For each iteration, randomly draw a set of parameter values.
 '''
 
 # -------------------------------------
@@ -137,7 +138,7 @@ print(pd.DataFrame(list(zip(eta_vals, best_rmse)), columns=["eta", "best_rmse"])
 # Grid of hyper-parameters from which we want to find the optimal combination
 gbm_param_grid = {
     'learning_rate': [0.01, 0.1, 0.5, 0.9],
-    'n_estimators': [200],
+    'n_estimators': [200],  # Note: "n_estimators" is "num_boost_round" but for the sklearn API
     'subsample': [0.3, 0.5, 0.9]
 }
 gbm = xgb.XGBRegressor(random_state=123)  # Use the sklearn API
@@ -154,3 +155,27 @@ with warnings.catch_warnings():
 # Look at results
 print("Best parameters found: ", grid_rmse.best_params_)
 print("Lowest RMSE found: ", np.sqrt(np.abs(grid_rmse.best_score_)))
+
+# -------------------------------------
+# ---- Ex04: Random search for hyper-parameters ----
+# Possible (large number of) values of hyper-parameters from which we want to sample and assess the metric
+gbm_param_grid = {
+    'learning_rate': np.arange(0.05, 1.05, .05),
+    'n_estimators': [200],
+    'subsample': np.arange(0.05, 1.05, .05),
+}
+gbm = xgb.XGBRegressor(random_state=123)  # Use the sklearn API
+randomised_rmse = RandomizedSearchCV(
+    estimator=gbm,
+    param_distributions=gbm_param_grid, n_iter=15,
+    scoring='neg_mean_squared_error',
+    cv=4, verbose=2,
+    random_state=123,
+)
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    randomised_rmse.fit(X, y)
+
+# Look at results
+print("Best parameters found: ", randomised_rmse.best_params_)
+print("Lowest RMSE found: ", np.sqrt(np.abs(randomised_rmse.best_score_)))
