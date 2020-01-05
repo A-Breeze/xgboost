@@ -34,13 +34,27 @@ except ImportError:
 
 # -------------------------------------
 # ---- Notes ----
-# TODO: Write notes
-''' 
+''' Tunable parameters in xgboost
+For tree based learner:
+- learning_rate (alias: eta) = how quickly the model fits the residual error using additional base learners
+    low => more iterations needed [but could fit a more detailed model]
+- gamma, alpha, lambda [see Ch02 notes]
+- max_depth = how deeply each tree is allowed to grow during each training round
+- subsample = % samples used per tree (i.e. fraction of the total training set used for each round)
+    low => could find specific patterns in subsets of data, but might underfit
+- colsample_bytree = % of columns used per tree
+    low => maybe consider this as additional regularisation
+
+For linear learner:
+- alpha, lambda [as above]
+- lambda_bias = L2 regularisation term on the bias 
+
+Both: Number of boosting round [and early stopping]
 '''
 
 # -------------------------------------
-# ---- Ex01: Basic untuned vs tuned model ----
-# Load data and format (should work even if you are not logged in to DataCamp)
+# ---- Load and format data ----
+# (should work even if you are not logged in to DataCamp)
 ames_url = (
     'https://assets.datacamp.com/production/repositories/943/datasets/'
     '4dbcaee889ef06fb0763e4a8652a4c1f268359b2/ames_housing_trimmed_processed.csv'
@@ -57,6 +71,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="Series.base is deprecated")
     housing_dmatrix = xgb.DMatrix(data=X, label=y)
 
+# -------------------------------------
+# ---- Ex01: Basic untuned vs tuned model ----
 # Fit *untuned* model
 untuned_params = {
     'objective': 'reg:squarederror',
@@ -82,3 +98,30 @@ tuned_cv_results = xgb.cv(
     nfold=4, seed=123, as_pandas=True,
 )
 print("Tuned rmse: %f" % tuned_cv_results['test-rmse-mean'].tail(1))
+
+# -------------------------------------
+# ---- Ex02: Tuning a single hyper-parameter ----
+# Load data and format (should work even if you are not logged in to DataCamp)
+params = {"objective": "reg:squarederror", "max_depth": 3}
+
+# Create list of eta values and empty list to store final round rmse per xgboost model
+eta_vals = [0.001, 0.01, 0.1]  # Could also do this for other parameters
+best_rmse = []
+
+# Systematically vary the eta
+for curr_val in eta_vals:
+    params["eta"] = curr_val
+
+    # Perform cross-validation: cv_results
+    cv_results = xgb.cv(
+        dtrain=housing_dmatrix,
+        params=params, metrics='rmse',
+        num_boost_round=10, early_stopping_rounds=5,
+        nfold=3, seed=123, as_pandas=True,
+    )
+
+    # Append the final round rmse to best_rmse
+    best_rmse.append(cv_results["test-rmse-mean"].tail().values[-1])
+
+# Print the resultant DataFrame
+print(pd.DataFrame(list(zip(eta_vals, best_rmse)), columns=["eta", "best_rmse"]))
