@@ -1,3 +1,9 @@
+## Custom patterns for this project ##
+# Ensure private environment variables are ignored from this project
+config_private.py
+
+# End of custom patterns for this project
+
 
 # Created by https://www.gitignore.io/api/pycharm+all
 # Edit at https://www.gitignore.io/?templates=pycharm+all
