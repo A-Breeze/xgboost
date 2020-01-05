@@ -55,8 +55,10 @@ Both: Number of boosting round [and early stopping]
 Options for finding the best hyperparameters
 - Grid search => search exhaustively over a given set of hyper-parameter values
     Pick the hyper-parameter values that give you the best cross-validated evaluation metric
+    Limitation: With even a modest number of hyper-parameter values, it can take a long time to run grid search
 - Random search => create a (possibly infinite) range of hyper-parameter values per hyper-parameter to search over
     Set the number of search iterations. For each iteration, randomly draw a set of parameter values.
+    Limitation: Adding new hyper-parameters means the parameter space expands. Uncertain whether to find a good set
 '''
 
 # -------------------------------------
