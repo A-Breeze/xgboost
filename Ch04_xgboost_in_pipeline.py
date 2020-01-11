@@ -1,5 +1,5 @@
 # Extreme Gradient Boosting with XGBoost - DataCamp - January 2020
-# Ch3: Fine-tuning XGBoost models
+# Ch4: Use XGBoost models in a pipeline
 
 # -------------------------------------
 # ---- Setup ----
@@ -88,7 +88,7 @@ housing_data[categorical_columns] = housing_data[categorical_columns].apply(lamb
 print(housing_data[categorical_columns].head())  # Check result
 
 # Now want to convert the numerical labels to dummy variables
-# Apply OneHotEncoder to categorical columns - output is a numpy arry, not a dataframe
+# Apply OneHotEncoder to categorical columns - output is a numpy array, not a dataframe
 data_encoded_arr = np.concatenate((
         housing_data[housing_data.columns[~categorical_mask].to_list()].to_numpy(),
         OneHotEncoder(sparse=False).fit_transform(housing_data[categorical_columns])
@@ -99,9 +99,19 @@ print(data_encoded_arr.shape)
 
 # Instead, perform the above using a DictVectorizer
 dv = DictVectorizer(sparse=False)
-df_encoded = dv.fit_transform(housing_data.to_dict("records"))
+df_encoded = dv.fit_transform(housing_data.to_dict("records"))  # list like [{column -> value}, … , {column -> value}]
 print(df_encoded[:5,:]) # Print the resulting first five rows
 print(dv.vocabulary_)  # Look at the "vocabulary" that has been derived
+
+# Put it into a pipeline
+xgb_pipeline = Pipeline([
+    ("ohe_onestep", DictVectorizer(sparse=False)),  # One-hot encode the input matrix
+    ("xgb_model", xgb.XGBRegressor(objective='reg:squarederror'))
+])
+xgb_pipeline.fit(  # Fit the pipeline
+    X=housing_data.iloc[:, :-1].to_dict("records"),  # X needs to be a dict for the DictVectorizer
+    y=housing_data.iloc[:, -1]
+)
 
 # -------------------------------------
 # ---- Ex02: an sklearn pipeline with cross validation ----
