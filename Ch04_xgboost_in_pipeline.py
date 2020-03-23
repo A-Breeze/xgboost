@@ -138,4 +138,20 @@ scores = cross_val_score(
     scoring='neg_mean_squared_error',
 )
 final_avg_rmse = np.mean(np.sqrt(np.abs(scores)))  # Average over all folds
-print("Final RMSE: ", final_avg_rmse)
+print("Final RMSE: ", final_avg_rmse)  # 4.1585
+
+# ---- Ex02b: Same but with xgboost ----
+# Set up pipeline
+xgb_pipeline = Pipeline([
+    ('st_scaler', StandardScaler()),
+    ('xgb_model', xgb.XGBRegressor(objective='reg:squarederror')),  # xgboost step goes here
+])
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    scores_xgb = cross_val_score(
+        xgb_pipeline, X, y,
+        cv=10,
+        scoring='neg_mean_squared_error',
+    )
+final_avg_rmse_xgb = np.mean(np.sqrt(np.abs(scores_xgb)))  # Average over all folds
+print("Final RMSE for xgb model: ", final_avg_rmse_xgb)  # 4.0272
