@@ -24,6 +24,8 @@
     (xgboost_training) > where python | clip
     ```
 
+Instead of PyCharm, the project is also configured to be used in VSCode.
+
 ### Private project environment variables
 `.\config_public.py` contains a list of all the private variables that I needed to run the code, except with the private values set to `None`. To use those variables:
 1. Create a copy of `.\config_public.py`, and save it as  `.\config_private.py`. It will be ignored from the Git repo.
