@@ -303,3 +303,7 @@ with warnings.catch_warnings():
     search_results = randomized_neg_mse.fit(X_bos, y_bos)
 
 print("Best RMSE: ", np.sqrt(np.abs(search_results.best_score_)))  # 4.41504
+assert search_results.best_params_ == {  # Check results are the same as a previous run
+    'xgb_model__subsample': 1.0, 'xgb_model__max_depth': 3, 'xgb_model__colsample_bytree': 1.0
+}
+print(search_results.best_estimator_['xgb_model'])  # Get the fitted xgboost object
