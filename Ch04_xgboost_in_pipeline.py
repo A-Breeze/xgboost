@@ -15,9 +15,11 @@ from pyprojroot import here
 from sklearn import __version__ as skl_version
 from sklearn.datasets import load_boston  # For Boston housing data set
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder, Imputer
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.impute import SimpleImputer
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.pipeline import Pipeline, FeatureUnion
+from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.model_selection import cross_val_score
 from requests import get as requests_get  # For getting data from a website (if using an internet proxy)
 from sklearn_pandas import __version__ as skl_pandas_version
@@ -212,5 +214,57 @@ print(kidney_data.head())
 
 X = kidney_data.iloc[:, :-1]
 y = kidney_data.iloc[:, -1]
+print(X.isnull().sum())  # Check number of nulls in each feature column
 
-# TODO: Set up pipeline
+# Get lists of categorical and non-categorical column names
+categorical_feature_mask = X.dtypes == object  # Create a boolean mask for categorical columns
+categorical_columns = X.columns[categorical_feature_mask].tolist()
+non_categorical_columns = X.columns[~categorical_feature_mask].tolist()
+
+# Apply numeric imputer
+numeric_imputation_mapper = DataFrameMapper(
+    [([numeric_feature], SimpleImputer(strategy="median")) for numeric_feature in non_categorical_columns],
+    input_df=True, df_out=True)
+
+# Apply categorical imputer
+categorical_imputation_mapper = DataFrameMapper(
+    [(category_feature, CategoricalImputer()) for category_feature in categorical_columns],
+    input_df=True, df_out=True)
+
+# Combine the numeric and categorical transformations
+numeric_categorical_union = FeatureUnion([
+    ("num_mapper", numeric_imputation_mapper),
+    ("cat_mapper", categorical_imputation_mapper)])
+
+# Additional transformer needed
+class Dictifier(BaseEstimator, TransformerMixin):
+    """Pipeline element (transformer) for calling .to_dict("records") on a DataFrame"""
+    
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        if type(X) == pd.core.frame.DataFrame:
+            return X.to_dict("records")
+        else:
+            return pd.DataFrame(X).to_dict("records")
+
+# Create full pipeline
+pipeline_3 = Pipeline([
+    ("featureunion", numeric_categorical_union),
+    ("dictifier", Dictifier()),
+    ("vectorizer", DictVectorizer(sort=False)),
+    ("clf", xgb.XGBClassifier(max_depth=3))
+])
+
+# Perform cross-validation
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    warnings.filterwarnings("ignore", category=FutureWarning)
+    cross_val_scores_3 = cross_val_score(
+        pipeline_3, X, y, 
+        scoring="roc_auc", cv=3
+    )
+
+# Print avg. AUC
+print("3-fold AUC: ", np.mean(cross_val_scores_3))  # 0.99864
