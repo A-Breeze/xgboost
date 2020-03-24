@@ -4,6 +4,7 @@ channels:
   - conda-forge
 dependencies:
   - python==3.7.5
+  - pip==20.0.2
   - pyprojroot==0.2.0
   - numpy==1.17.4
   - pandas==0.25.3
@@ -13,3 +14,5 @@ dependencies:
   - requests==2.22.0
   - graphviz==2.38.0
   - python-graphviz==0.8.4
+  - pip:
+    - sklearn-pandas==1.8.0
