@@ -20,7 +20,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.feature_extraction import DictVectorizer
 from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.base import BaseEstimator, TransformerMixin
-from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import cross_val_score, RandomizedSearchCV
 from requests import get as requests_get  # For getting data from a website (if using an internet proxy)
 from sklearn_pandas import __version__ as skl_pandas_version
 from sklearn_pandas import DataFrameMapper, CategoricalImputer
@@ -125,12 +125,12 @@ with warnings.catch_warnings():
 # Get data and pre-process
 boston_bunch = load_boston()
 print(boston_bunch.keys())  # Available attributes
-names = [
+boston_names = [
     'crime', 'zone', 'industry', 'charles', 'no', 'rooms',
     'age', 'distance', 'radial', 'tax', 'pupil', 'aam', 'lower', 'med_price',
     ]
-X = pd.DataFrame(boston_bunch.data, columns=names[:-1])
-y = pd.Series(boston_bunch.target, name=names[-1])
+X = pd.DataFrame(boston_bunch.data, columns=boston_names[:-1])
+y = pd.Series(boston_bunch.target, name=boston_names[-1])
 
 # Set up pipeline
 rf_pipeline = Pipeline([
@@ -268,3 +268,38 @@ with warnings.catch_warnings():
 
 # Print avg. AUC
 print("3-fold AUC: ", np.mean(cross_val_scores_3))  # 0.99864
+
+# -------------------------------------
+# ---- Ex04: Tuning xgboost hyper-parameters ----
+# Use the Boston housing data loaded above
+X_bos = pd.DataFrame(boston_bunch.data, columns=boston_names[:-1])
+y_bos = pd.Series(boston_bunch.target, name=boston_names[-1])
+
+# Set up pipeline as usual
+xgb_pipeline_4 = Pipeline([
+    ('st_scaler', StandardScaler()),
+    ('xgb_model', xgb.XGBRegressor(objective='reg:squarederror', random_state=5))
+])
+
+# Create grid of hyper-parameters to search over
+gbm_param_grid = {
+    # Key for each element must be: <pipeline-step-name>__<hyper-parameter-name>
+    'xgb_model__subsample': np.linspace(.8, 1, 3, endpoint=True),
+    'xgb_model__max_depth': np.arange(3, 6, 1),
+    'xgb_model__colsample_bytree': np.linspace(.4, 1, 3, endpoint=True),
+}
+
+# Initialise random search object
+randomized_neg_mse = RandomizedSearchCV(
+    estimator=xgb_pipeline_4,
+    param_distributions=gbm_param_grid, n_iter=10,
+    scoring='neg_mean_squared_error', cv=4,
+    random_state=123,
+)
+
+# Run random search and view results
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    search_results = randomized_neg_mse.fit(X_bos, y_bos)
+
+print("Best RMSE: ", np.sqrt(np.abs(search_results.best_score_)))  # 4.41504
