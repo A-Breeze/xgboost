@@ -15,17 +15,20 @@ from pyprojroot import here
 from sklearn import __version__ as skl_version
 from sklearn.datasets import load_boston  # For Boston housing data set
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder, Imputer
 from sklearn.feature_extraction import DictVectorizer
-from sklearn.pipeline import Pipeline
+from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.model_selection import cross_val_score
 from requests import get as requests_get  # For getting data from a website (if using an internet proxy)
+from sklearn_pandas import __version__ as skl_pandas_version
+from sklearn_pandas import DataFrameMapper, CategoricalImputer
 
 # Check they have imported OK
 print("xgboost version: " + str(xgb.__version__))
 print("numpy version: " + str(np.__version__))
 print("pandas version: " + str(pd.__version__))
 print("sklearn version: " + str(skl_version))
+print("sklearn-pandas version: " + str(skl_pandas_version))
 
 # Project locations
 data_folder_path = here('.') / 'data'
@@ -108,10 +111,12 @@ xgb_pipeline = Pipeline([
     ("ohe_onestep", DictVectorizer(sparse=False)),  # One-hot encode the input matrix
     ("xgb_model", xgb.XGBRegressor(objective='reg:squarederror'))
 ])
-xgb_pipeline.fit(  # Fit the pipeline
-    X=housing_data.iloc[:, :-1].to_dict("records"),  # X needs to be a dict for the DictVectorizer
-    y=housing_data.iloc[:, -1]
-)
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    xgb_pipeline.fit(  # Fit the pipeline
+        X=housing_data.iloc[:, :-1].to_dict("records"),  # X needs to be a dict for the DictVectorizer
+        y=housing_data.iloc[:, -1]
+    )
 
 # -------------------------------------
 # ---- Ex02: an sklearn pipeline with cross validation ----
@@ -142,16 +147,70 @@ print("Final RMSE: ", final_avg_rmse)  # 4.1585
 
 # ---- Ex02b: Same but with xgboost ----
 # Set up pipeline
-xgb_pipeline = Pipeline([
+xgb_pipeline_2b = Pipeline([
     ('st_scaler', StandardScaler()),
     ('xgb_model', xgb.XGBRegressor(objective='reg:squarederror')),  # xgboost step goes here
 ])
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="Series.base is deprecated")
     scores_xgb = cross_val_score(
-        xgb_pipeline, X, y,
+        xgb_pipeline_2b, X, y,
         cv=10,
         scoring='neg_mean_squared_error',
     )
 final_avg_rmse_xgb = np.mean(np.sqrt(np.abs(scores_xgb)))  # Average over all folds
 print("Final RMSE for xgb model: ", final_avg_rmse_xgb)  # 4.0272
+
+# ---- Ex02c: Same but with ames housing data ----
+# The pipeline was created above
+# Use it with CV here
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="Series.base is deprecated")
+    cross_val_scores = cross_val_score(
+        xgb_pipeline, 
+        X=housing_data.iloc[:, :-1].to_dict("records"),  # X needs to be a dict for the DictVectorizer
+        y=housing_data.iloc[:, -1],
+        cv=10,
+        scoring='neg_mean_squared_error',
+    )
+print("10-fold RMSE: ", np.mean(np.sqrt(np.abs(cross_val_scores))))  # 28440.80
+
+# -------------------------------------
+# ---- Ex03: More sklearn pipelines ----
+kidney_raw_url = (
+    # This is the course copy of the Chronic Kidney data set. Full version is on UCI here:
+    # <https://archive.ics.uci.edu/ml/datasets/chronic_kidney_disease>
+    'https://assets.datacamp.com/production/repositories/943/datasets/'
+    '82c231cd41f92325cf33b78aaa360824e6b599b9/chronic_kidney_disease.csv'
+)
+kidney_feature_names_raw_order = [
+    'age', 'bp', 'sg', 'al', 'su', 'rbc', 'pc', 'pcc', 'ba',
+    'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv',
+    'wc', 'rc', 
+    'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
+kidney_feature_names = [
+    'age', 'bp', 'sg', 'al', 'su', 'bgr', 'bu', 'sc', 'sod', 'pot', 'hemo', 'pcv', 'wc', 
+    'rc', 'rbc', 'pc', 'pcc', 'ba', 'htn', 'dm', 'cad', 'appet', 'pe', 'ane']
+kidney_target_name = 'class'
+
+if project_config.proxy_dict['http'] is None:
+    kidney_data = pd.read_csv(
+        kidney_raw_url, 
+        names=kidney_feature_names_raw_order + [kidney_target_name], index_col=False,
+        na_values='?',
+        )
+else:
+    data_str = requests_get(kidney_raw_url, proxies=project_config.proxy_dict).text
+    kidney_data = pd.read_csv(
+        io.StringIO(data_str), 
+        names=kidney_feature_names_raw_order + [kidney_target_name], index_col=False,
+        na_values='?',
+        )
+kidney_data = kidney_data[kidney_feature_names + [kidney_target_name]]  # Match the column order in the exercise
+print(kidney_data.shape)  # Check it has loaded OK
+print(kidney_data.head())
+
+X = kidney_data.iloc[:, :-1]
+y = kidney_data.iloc[:, -1]
+
+# TODO: Set up pipeline
